@@ -1,0 +1,13 @@
+{
+  "name": "notificationstatusorderservice",
+  "version": "1.0.0",
+  "description": "// NOTIFICADOR:\r IMPLEMENTA UM PROVEDOR OU VÁRIOS PARA NOTIFICAR BASEADO NA FILA(CONSUMER)\r A IDEIA PRINCIPAL É PEGAR O VALOR DA FILA, VALIDAR ALGUNS PONTOS E ENVIAR PRO PROVEDOR,\r E RETENTAR CASO O PROVEDOR TENHA CAÍDO\r RETRYS!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
