@@ -17,18 +17,20 @@ interface NotificationProps {
   channel: Channel;
   recipient: Recipient;
   createdAt?: Date;
+  tries?: number;
 }
 
-export class Notification {
+export class DomainNotification {
   private constructor(
     public readonly id: UniqueEntityID,
     public status: Status,
     public readonly channel: Channel,
     public readonly createdAt: Date,
-    public readonly recipient: Recipient
+    public readonly recipient: Recipient,
+    public tries: number = 0
   ) {}
 
-  static create(props: NotificationProps): Result<Notification> {
+  static create(props: NotificationProps): Result<DomainNotification> {
     if (!Object.values(Status).includes(props.status)) {
       return Result.fail(
         new AppError(
@@ -40,19 +42,22 @@ export class Notification {
       );
     }
 
-    const notification = new Notification(
+    const notification = new DomainNotification(
       props.id ?? new UniqueEntityID(),
       props.status,
       props.channel,
       props.createdAt ?? new Date(),
-      props.recipient
+      props.recipient,
+      props.tries ?? 0
     );
-
     return Result.ok(notification);
   }
 
-  markAsFinished() { this.status = "finished"; }
-  markAsFailed() { this.status = "failed"; }
-  markAsPending() { this.status = "pending"; }
-  markAsCanceled() { this.status = "canceled"; }
+  getTries(): number {
+    return this.tries;
+  }
+
+  incrementTries(): void {
+    this.tries++;
+  }
 }

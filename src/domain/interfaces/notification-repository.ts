@@ -1,8 +1,7 @@
-import { Notification } from "@/domain/enterprise/entities/notification";
+import { DomainNotification } from "@/domain/enterprise/entities/notification";
 import { Result } from "@/shared/core/result";
 
 export interface NotificationRepository {
-  create(notification: Notification): Promise<Result<void>>;
-  findById(id: string):Promise<Result<Notification | null>>;
-  update(notification: Notification): Promise<Result<void>>;
+  save(notification: DomainNotification): Promise<Result<void>>;
+  update(notification: DomainNotification): Promise<Result<void>>;
 }
