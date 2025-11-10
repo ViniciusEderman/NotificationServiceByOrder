@@ -31,7 +31,8 @@ export class DomainNotification {
   ) {}
 
   static create(props: NotificationProps): Result<DomainNotification> {
-    if (!Object.values(Status).includes(props.status)) {
+    const isValidStatus = Object.values(Status).includes(props.status);
+    if (!isValidStatus) {
       return Result.fail(
         new AppError(
           "INVALID_NOTIFICATION_STATUS",
