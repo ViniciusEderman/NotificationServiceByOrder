@@ -14,4 +14,6 @@ RabbitMQ Event → UseCase → Notification (em memória) → Envio →
      → Se sucesso → salva no banco (status: finished)
      → Se falha (tries < 5) → reenqueue
      → Se falha (tries >= 5) → salva no banco (status: failed)
-     
+
+FINALIZADO -> CRIAR TESTES UNITÁRIOS(SEGUINDO PADRÃO FACTORIE, MOCKS E UTILS...)
+finalizado a parte de use-case + teste -> implementar o mais tranquilo(INFRA)
