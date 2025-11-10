@@ -1,4 +1,3 @@
-
 export interface Logger {
   info(message: string, meta?: Record<string, any>): void;
   warn(message: string, meta?: Record<string, any>): void;
