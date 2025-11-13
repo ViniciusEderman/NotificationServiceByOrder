@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { describe, it, expect, vi } from "vitest";
 import { NotificationCreationPublisher } from "@/domain/application/use-cases/notification-creation-publisher";
 import { makeNotification } from "@/factories/make-notification";
@@ -7,7 +8,7 @@ import { Result } from "@/shared/core/result";
 describe("NotificationCreationPublisher", () => {
   it("must successfully publish a notification", async () => {
     const { publisher, repository, logger } = makeNotificationMocks();
-    const useCase = new NotificationCreationPublisher(publisher, repository, logger);
+    const useCase = new NotificationCreationPublisher(logger, publisher, repository);
     const notification = makeNotification();
 
     vi.mocked(publisher.publishToCreate).mockResolvedValue(Result.ok<void>(undefined));
@@ -22,7 +23,7 @@ describe("NotificationCreationPublisher", () => {
 
   it("should save the notification if the publication fails", async () => {
     const { publisher, repository, logger } = makeNotificationMocks();
-    const useCase = new NotificationCreationPublisher(publisher, repository, logger);
+    const useCase = new NotificationCreationPublisher(logger, publisher, repository);
     const notification = makeNotification();
 
     vi.mocked(publisher.publishToCreate).mockResolvedValue(
