@@ -11,7 +11,6 @@ export function makeNotificationMocks() {
 
   const repository: NotificationRepository = {
     save: vi.fn(),
-    update: vi.fn(),
   };
 
   const logger = makeLogger();
