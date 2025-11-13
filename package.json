@@ -12,13 +12,15 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/amqplib": "0.10.8",
     "@vitest/coverage-istanbul": "3.2.4",
     "@vitest/coverage-v8": "3.2.4",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.2.4"
   },
   "dependencies": {
-    "tsyringe": "^3.3.0",
-    "winston": "^3.18.3"
+    "amqplib": "0.10.9",
+    "tsyringe": "3.3.0",
+    "winston": "3.18.3"
   }
 }

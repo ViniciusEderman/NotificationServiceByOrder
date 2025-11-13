@@ -3,5 +3,4 @@ import { Result } from "@/shared/core/result";
 
 export interface NotificationRepository {
   save(notification: DomainNotification): Promise<Result<void>>;
-  update(notification: DomainNotification): Promise<Result<void>>;
 }
