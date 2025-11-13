@@ -1,13 +1,24 @@
 {
   "name": "notificationstatusorderservice",
   "version": "1.0.0",
-  "description": "// NOTIFICADOR:\r IMPLEMENTA UM PROVEDOR OU VÁRIOS PARA NOTIFICAR BASEADO NA FILA(CONSUMER)\r A IDEIA PRINCIPAL É PEGAR O VALOR DA FILA, VALIDAR ALGUNS PONTOS E ENVIAR PRO PROVEDOR,\r E RETENTAR CASO O PROVEDOR TENHA CAÍDO\r RETRYS!",
+  "description": "...",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "@vitest/coverage-istanbul": "3.2.4",
+    "@vitest/coverage-v8": "3.2.4",
+    "vite-tsconfig-paths": "5.1.4",
+    "vitest": "3.2.4"
+  },
+  "dependencies": {
+    "tsyringe": "^3.3.0",
+    "winston": "^3.18.3"
+  }
 }

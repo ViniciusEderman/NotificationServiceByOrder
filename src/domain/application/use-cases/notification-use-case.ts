@@ -1,27 +1,52 @@
-import { DomainNotification } from "@/domain/enterprise/entities/notification";
+import {
+  DomainNotification,
+  Status,
+} from "@/domain/enterprise/entities/notification";
 import { Logger } from "@/domain/interfaces/logger";
-import { NotificationSender } from "@/domain/interfaces/notification-sender";
-import { NotificationCreationPublisher } from "@/domain/application/use-cases/notification-creation-publisher";
-import { NotificationRetryScheduler } from "@/domain/application/use-cases/notification-retry-scheduler";
+import { NotificationEvent } from "@/domain/application/dtos/notification-event.dto";
+import { RecipientRepository } from "@/domain/interfaces/recipient-repository";
+import { NotificationDispatcher } from "@/domain/application/use-cases/notification-dispatcher-use-case";
+import { AppError, Result } from "@/shared/core/result";
 
 export class SendNotificationUseCase {
   constructor(
     private logger: Logger,
-    private sender: NotificationSender,
-    private retryScheduler: NotificationRetryScheduler,
-    private creationPublisher: NotificationCreationPublisher,
+    private recipientRepository: RecipientRepository,
+    private dispatcher: NotificationDispatcher,
   ) {}
 
-  async execute(notification: DomainNotification): Promise<void> {
-    this.logger.info("transmitting notification...", { id: notification.id });
+  async execute(event: NotificationEvent): Promise<Result<DomainNotification>> {
+    const recipientResult = await this.recipientRepository.findByClientId(
+      event.clientId
+    );
 
-    const result = await this.sender.send(notification);
-
-    if (!result.isSuccess) {
-      await this.retryScheduler.handleFailure(notification);
-      return;
+    if (!recipientResult.isSuccess) {
+      this.logger.error("failed to find recipient", recipientResult.getError());
+      return Result.fail(recipientResult.getError());
     }
 
-    await this.creationPublisher.handleSuccess(notification);
+    const recipient = recipientResult.getValue();
+    if (!recipient) {
+      this.logger.error("recipient not found", { clientId: event.clientId });
+      return Result.fail(
+        new AppError("RECIPIENT_NOT_FOUND", "recipient not found")
+      );
+    }
+    
+    const notificationResult = DomainNotification.create({
+      status: Status.Pending,
+      channel: "SMS",
+      recipient,
+    });
+
+    if (!notificationResult.isSuccess) {
+      this.logger.error("failed to create notification", notificationResult.getError());
+      return notificationResult;
+    }
+
+    const notification = notificationResult.getValue();
+    await this.dispatcher.execute(notification);
+    
+    return Result.ok(notification);
   }
 }
