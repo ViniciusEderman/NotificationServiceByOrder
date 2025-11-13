@@ -21,6 +21,8 @@ interface NotificationProps {
 }
 
 export class DomainNotification {
+  private static readonly MAX_RETRIES = 5;
+
   private constructor(
     public readonly id: UniqueEntityID,
     public status: Status,
@@ -43,6 +45,24 @@ export class DomainNotification {
       );
     }
 
+    if (!props.status) {
+      return Result.fail(
+        new AppError("NOTIFICATION_STATUS_REQUIRED", "status is required")
+      );
+    }
+
+    if (!props.channel) {
+      return Result.fail(
+        new AppError("NOTIFICATION_CHANNEL_REQUIRED", "channel is required")
+      );
+    }
+
+    if (!props.recipient) {
+      return Result.fail(
+        new AppError("NOTIFICATION_RECIPIENT_REQUIRED", "recipient is required")
+      );
+    }
+
     const notification = new DomainNotification(
       props.id ?? new UniqueEntityID(),
       props.status,
@@ -54,11 +74,11 @@ export class DomainNotification {
     return Result.ok(notification);
   }
 
-  getTries(): number {
-    return this.tries;
-  }
-
   incrementTries(): void {
     this.tries++;
+  }
+
+  exceededMaxTries(): boolean {
+    return this.tries > DomainNotification.MAX_RETRIES;
   }
 }

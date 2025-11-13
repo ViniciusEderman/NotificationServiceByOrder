@@ -1,20 +1,23 @@
+import { NotificationRepository } from "@/domain/interfaces/notification-repository";
 import { DomainNotification } from "@/domain/enterprise/entities/notification";
 import { Logger } from "@/domain/interfaces/logger";
-import { NotificationRepository } from "@/domain/interfaces/notification-repository";
 import { NotificationGateway } from "@/domain/interfaces/queue";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class NotificationCreationPublisher {
   constructor(
-    private gateway: NotificationGateway,
-    private repository: NotificationRepository,
-    private logger: Logger
+    private logger: Logger,
+    private publisher: NotificationGateway,
+    private repository: NotificationRepository
   ) {}
 
-  async handleSuccess(notification: DomainNotification): Promise<void> {
-    const result = await this.gateway.publishToCreate(notification);
+  async execute(notification: DomainNotification): Promise<void> {
+    this.logger.info("publishing...", { notification });
+    const result = await this.publisher.publishToCreate(notification);
 
     if (!result.isSuccess) {
-      this.logger.error("Failed to publish creation", { id: notification.id });
+      this.logger.error("failed to publish creation", { id: notification.id });
       await this.repository.save(notification);
     }
   }
