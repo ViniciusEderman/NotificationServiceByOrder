@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { describe, it, expect, vi } from "vitest";
 import { SendNotificationUseCase } from "@/domain/application/use-cases/notification-use-case";
 import { NotificationDispatcher } from "@/domain/application/use-cases/notification-dispatcher-use-case";

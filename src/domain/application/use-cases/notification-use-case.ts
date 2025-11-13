@@ -7,7 +7,9 @@ import { NotificationEvent } from "@/domain/application/dtos/notification-event.
 import { RecipientRepository } from "@/domain/interfaces/recipient-repository";
 import { NotificationDispatcher } from "@/domain/application/use-cases/notification-dispatcher-use-case";
 import { AppError, Result } from "@/shared/core/result";
+import { injectable } from "tsyringe";
 
+@injectable()
 export class SendNotificationUseCase {
   constructor(
     private logger: Logger,
@@ -34,9 +36,10 @@ export class SendNotificationUseCase {
     }
     
     const notificationResult = DomainNotification.create({
-      status: Status.Pending,
-      channel: "SMS",
+      status: event.status || Status.Pending,
+      channel: event.channel || "SMS",
       recipient,
+      tries: event.tries || 0,
     });
 
     if (!notificationResult.isSuccess) {
