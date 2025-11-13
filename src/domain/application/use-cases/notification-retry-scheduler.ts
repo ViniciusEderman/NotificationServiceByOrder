@@ -3,8 +3,6 @@ import { Logger } from "@/domain/interfaces/logger";
 import { NotificationRepository } from "@/domain/interfaces/notification-repository";
 import { NotificationGateway } from "@/domain/interfaces/queue";
 
-const MAX_TRIES = 5;
-
 export class NotificationRetryScheduler {
   constructor(
     private gateway: NotificationGateway,
@@ -12,10 +10,10 @@ export class NotificationRetryScheduler {
     private logger: Logger
   ) {}
 
-  async handleFailure(notification: DomainNotification): Promise<void> {
+  async execute(notification: DomainNotification): Promise<void> {
     notification.incrementTries();
 
-    if (notification.getTries() > MAX_TRIES) {
+    if (notification.exceededMaxTries()) {
       this.logger.error("max retries exceeded", { id: notification.id });
       await this.repository.save(notification);
       return;
@@ -24,6 +22,8 @@ export class NotificationRetryScheduler {
     const result = await this.gateway.publishToRetry(notification);
     if (!result.isSuccess) {
       this.logger.error("failed to schedule retry", { id: notification.id });
+      await this.repository.save(notification);
+      return;
     }
   }
 }
