@@ -18,6 +18,7 @@ export function makeNotification(
 
   const result = DomainNotification.create({
     id: new UniqueEntityID("uuid-123"),
+    externalId: 'ecc2176b-c2da-43dc-a76c-297326f33b50',
     status: overrides.status ?? Status.Pending,
     channel: overrides.channel ?? "SMS",
     recipient,
