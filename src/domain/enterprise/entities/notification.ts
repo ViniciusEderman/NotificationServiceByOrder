@@ -13,6 +13,7 @@ export type Channel = "SMS";
 
 interface NotificationProps {
   id?: UniqueEntityID;
+  externalId: string;
   status: Status;
   channel: Channel;
   recipient: Recipient;
@@ -25,6 +26,7 @@ export class DomainNotification {
 
   private constructor(
     public readonly id: UniqueEntityID,
+    public readonly externalId: string,
     public status: Status,
     public readonly channel: Channel,
     public readonly createdAt: Date,
@@ -51,6 +53,12 @@ export class DomainNotification {
       );
     }
 
+    if (!props.externalId) {
+      return Result.fail(
+        new AppError("NOTIFICATION_EXTERNAL_ID_REQUIRED", "externalId is required")
+      );
+    }
+
     if (!props.channel) {
       return Result.fail(
         new AppError("NOTIFICATION_CHANNEL_REQUIRED", "channel is required")
@@ -65,6 +73,7 @@ export class DomainNotification {
 
     const notification = new DomainNotification(
       props.id ?? new UniqueEntityID(),
+      props.externalId,
       props.status,
       props.channel,
       props.createdAt ?? new Date(),

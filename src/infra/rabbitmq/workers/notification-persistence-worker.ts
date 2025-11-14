@@ -2,12 +2,14 @@ import { injectable } from "tsyringe";
 import amqp, { Connection, Channel } from "amqplib";
 import { WinstonLogger } from "@/infra/logging/winston-logger";
 import { NotificationRepository } from "@/domain/interfaces/notification-repository";
+import { Result, AppError } from "@/shared/core/result";
 
 interface MessageContent {
   id: string;
+  tries: number;
   channel: string;
   status: string;
-  tries: number;
+  externalId: string;
   recipient: {
     clientId: string;
     phoneNumber: string;
@@ -20,15 +22,17 @@ export class NotificationPersistenceWorker {
   private connection!: Connection;
   private channel!: Channel;
   private readonly PREFETCH = 5;
-  private readonly QUEUE_NAME = process.env.PERSISTENCE_QUEUE || "notification-persistence-queue";
-  private readonly amqpUrl: string = process.env.RABBITMQ_URL || "amqp://localhost:5672";
+  private readonly QUEUE_NAME =
+    process.env.PERSISTENCE_QUEUE || "notification-persistence-queue";
+  private readonly amqpUrl: string =
+    process.env.RABBITMQ_URL || "amqp://localhost:5672";
 
   constructor(
     private readonly logger: WinstonLogger,
     private readonly notificationRepository: NotificationRepository
   ) {}
 
-  async startListening(): Promise<void> {
+  async startListening(): Promise<Result<void>> {
     try {
       const conn = await amqp.connect(this.amqpUrl);
       this.connection = conn as unknown as Connection;
@@ -41,7 +45,7 @@ export class NotificationPersistenceWorker {
       await this.channel.assertQueue(this.QUEUE_NAME, {
         durable: true,
         arguments: {
-          "x-message-ttl": 10000,
+          "x-message-ttl": 40000,
         },
       });
 
@@ -49,41 +53,8 @@ export class NotificationPersistenceWorker {
         `notification-persistence-worker listening on queue: ${this.QUEUE_NAME}`
       );
 
-      await this.channel.consume(
-        this.QUEUE_NAME,
-        async (msg: amqp.Message | null) => {
-          if (msg) {
-            try {
-              const content = JSON.parse(
-                msg.content.toString()
-              ) as MessageContent;
-
-              const result = await this.notificationRepository.save(content as any); // ANALISE ESSA TYPAGEM
-
-              if (!result.isSuccess) {
-                this.logger.error("failed to persist notification", {
-                  error: result.getError().message,
-                  notificationId: content.id,
-                });
-                this.channel.nack(msg, false, false);
-                return;
-              }
-
-              this.channel.ack(msg);
-              this.logger.info("notification persisted and acked", {
-                notificationId: content.id,
-              });
-            } catch (error) {
-              this.logger.error(
-                "error processing message in persistence worker",
-                {
-                  error: error instanceof Error ? error.message : String(error),
-                }
-              );
-              this.channel.nack(msg, false, false);
-            }
-          }
-        }
+      await this.channel.consume(this.QUEUE_NAME, (msg) =>
+        this.handleMessage(msg)
       );
 
       this.connection.on("error", (err: Error) => {
@@ -95,11 +66,52 @@ export class NotificationPersistenceWorker {
       this.connection.on("close", () => {
         this.logger.warn("notification-persistence-worker connection closed");
       });
+
+      return Result.ok(undefined);
     } catch (error) {
       this.logger.error("failed to start notification-persistence-worker", {
         error: error instanceof Error ? error.message : String(error),
       });
-      throw error;
+      return Result.fail(
+        new AppError(
+          "WORKER_INITIALIZATION_ERROR",
+          error instanceof Error ? error.message : "Unknown error"
+        )
+      );
     }
+  }
+
+  private async handleMessage(msg: amqp.Message | null): Promise<void> {
+    if (!msg) {
+      this.logger.warn("received null message, ignoring");
+      return;
+    }
+
+    let content: MessageContent;
+    try {
+      content = JSON.parse(msg.content.toString()) as MessageContent;
+    } catch (error) {
+      this.logger.error("invalid message format", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.channel.nack(msg, false, false);
+      return;
+    }
+
+    const result = await this.notificationRepository.save(content as any);
+
+    if (!result.isSuccess) {
+      this.logger.error("failed to persist notification", {
+        error: result.getError().message,
+        notificationId: content.id,
+      });
+      this.channel.nack(msg, false, false);
+      return;
+    }
+
+    this.channel.ack(msg);
+    this.logger.info("notification persisted and acked", {
+      notificationId: content.id,
+    });
   }
 }

@@ -1,5 +1,6 @@
 import { vi } from "vitest";
-import { makeLogger } from "@/mocks/make-logger";import { NotificationSender } from "@/domain/interfaces/notification-sender";
+import { makeLogger } from "@/mocks/make-logger";
+import { NotificationSender } from "@/domain/interfaces/notification-sender";
 import { NotificationRetryScheduler } from "@/domain/application/use-cases/notification-retry-scheduler";
 import { NotificationCreationPublisher } from "@/domain/application/use-cases/notification-creation-publisher";
 
