@@ -1,11 +1,9 @@
 import {
   DomainNotification,
-  Status,
 } from "@/domain/enterprise/entities/notification";
 import { Logger } from "@/domain/interfaces/logger";
 import { NotificationEvent } from "@/domain/application/dtos/notification-event.dto";
 import { RecipientRepository } from "@/domain/interfaces/recipient-repository";
-import { NotificationDispatcher } from "@/domain/application/use-cases/notification-dispatcher-use-case";
 import { AppError, Result } from "@/shared/core/result";
 import { injectable } from "tsyringe";
 
@@ -14,7 +12,6 @@ export class SendNotificationUseCase {
   constructor(
     private logger: Logger,
     private recipientRepository: RecipientRepository,
-    private dispatcher: NotificationDispatcher,
   ) {}
 
   async execute(event: NotificationEvent): Promise<Result<DomainNotification>> {
@@ -36,10 +33,11 @@ export class SendNotificationUseCase {
     }
     
     const notificationResult = DomainNotification.create({
-      status: event.status || Status.Pending,
-      channel: event.channel || "SMS",
       recipient,
       tries: event.tries || 0,
+      channel: event.channel || "SMS",
+      status: event.status,
+      externalId: event.externalId,
     });
 
     if (!notificationResult.isSuccess) {
@@ -48,8 +46,6 @@ export class SendNotificationUseCase {
     }
 
     const notification = notificationResult.getValue();
-    await this.dispatcher.execute(notification);
-    
     return Result.ok(notification);
   }
 }

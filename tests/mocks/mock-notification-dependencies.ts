@@ -1,6 +1,6 @@
+import { vi } from "vitest";
 import { NotificationGateway } from "@/domain/interfaces/queue";
 import { NotificationRepository } from "@/domain/interfaces/notification-repository";
-import { vi } from "vitest";
 import { makeLogger } from "@/mocks/make-logger";
 
 export function makeNotificationMocks() {
