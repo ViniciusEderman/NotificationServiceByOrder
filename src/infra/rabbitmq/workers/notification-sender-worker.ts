@@ -101,7 +101,8 @@ export class NotificationSenderWorker {
       this.logger.info("notification processed successfully", {
         notificationId: notification.id.toString(),
       });
-    } catch (error) {
+    } 
+    catch (error) {
       this.logger.error("dispatcher error", {
         error: error instanceof Error ? error.message : String(error),
       });

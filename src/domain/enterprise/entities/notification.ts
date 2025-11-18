@@ -55,7 +55,10 @@ export class DomainNotification {
 
     if (!props.externalId) {
       return Result.fail(
-        new AppError("NOTIFICATION_EXTERNAL_ID_REQUIRED", "externalId is required")
+        new AppError(
+          "NOTIFICATION_EXTERNAL_ID_REQUIRED",
+          "externalId is required"
+        )
       );
     }
 
