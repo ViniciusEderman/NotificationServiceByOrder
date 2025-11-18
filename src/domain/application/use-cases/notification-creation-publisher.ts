@@ -19,10 +19,12 @@ export class NotificationCreationPublisher {
 
     if (!result.isSuccess) {
       this.logger.error("failed to publish creation", { id: notification.id });
+      notification.markAsFailed(notification.status, result.getError().message);
       await this.repository.save(notification);
 
       return Result.fail(result.getError());
     }
+    
     return Result.ok(undefined);
   }
 }

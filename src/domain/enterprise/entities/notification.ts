@@ -7,6 +7,7 @@ export enum Status {
   Accepted = "accepted",
   Finished = "finished",
   Canceled = "canceled",
+  Failed = "failed",
 }
 
 export type Channel = "SMS";
@@ -19,6 +20,9 @@ interface NotificationProps {
   recipient: Recipient;
   createdAt?: Date;
   tries?: number;
+  failureMessage?: string;
+  failedAt?: Date;
+  failed?: boolean;
 }
 
 export class DomainNotification {
@@ -31,7 +35,10 @@ export class DomainNotification {
     public readonly channel: Channel,
     public readonly createdAt: Date,
     public readonly recipient: Recipient,
-    public tries: number = 0
+    public tries: number = 0,
+    public failureMessage?: string,
+    public failedAt?: Date,
+    public failed?: boolean
   ) {}
 
   static create(props: NotificationProps): Result<DomainNotification> {
@@ -92,5 +99,12 @@ export class DomainNotification {
 
   exceededMaxTries(): boolean {
     return this.tries > DomainNotification.MAX_RETRIES;
+  }
+
+  markAsFailed(status: Status, failureMessage: string): void {
+    this.status = status;
+    this.failureMessage = failureMessage;
+    this.failedAt = new Date();
+    this.failed = true;
   }
 }

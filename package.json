@@ -19,7 +19,10 @@
     "vitest": "3.2.4"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.0",
     "amqplib": "0.10.9",
+    "prisma": "6.19.0",
+    "reflect-metadata": "0.1.13",
     "tsyringe": "3.3.0",
     "winston": "3.18.3"
   }

@@ -12,12 +12,13 @@ describe("NotificationDispatcher", () => {
 
     vi.mocked(sender.send).mockResolvedValue(Result.ok<void>(undefined));
 
-    await dispatcher.execute(notification);
+    const result = await dispatcher.execute(notification);
 
     expect(sender.send).toHaveBeenCalledWith(notification);
     expect(logger.error).not.toHaveBeenCalled();
     expect(retry.execute).not.toHaveBeenCalled();
     expect(publisher.execute).toHaveBeenCalledWith(notification);
+    expect(result.isSuccess).toBe(true);
   });
 
   it("should trigger a retry if the submission fails", async () => {
@@ -25,15 +26,16 @@ describe("NotificationDispatcher", () => {
     const dispatcher = new NotificationDispatcher(sender, retry, publisher, logger);
     const notification = makeNotification();
 
-    vi.mocked(sender.send).mockResolvedValue(
-      Result.fail<void>({ code: "SEND_ERROR", message: "failed to send" })
-    );
+    const sendError = { code: "SEND_ERROR", message: "failed to send" };
+    vi.mocked(sender.send).mockResolvedValue(Result.fail<void>(sendError));
 
-    await dispatcher.execute(notification);
+    const result = await dispatcher.execute(notification);
 
     expect(sender.send).toHaveBeenCalledWith(notification);
     expect(logger.error).toHaveBeenCalledWith("failed to send notification", { id: notification.id });
     expect(retry.execute).toHaveBeenCalledWith(notification);
     expect(publisher.execute).not.toHaveBeenCalled();
+    expect(result.isSuccess).toBe(false);
+    expect(result.getError()).toBe(sendError);
   });
 });
