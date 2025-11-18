@@ -9,12 +9,11 @@ import { AppError, Result } from "@/shared/core/result";
 export class Rabbit implements NotificationGateway {
   private connection!: Connection;
   private channel!: Channel;
-  private readonly RETRY_QUEUE = "notification-retry-queue"; // adicionar env
-  private readonly CREATE_QUEUE = "notification-create-queue"; // adicionar env
-  private readonly RETRY_QUEUE_TTL = 600000;
-  private readonly CREATE_QUEUE_TTL = 10000;
-  private readonly amqpUrl: string =
-    process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672";
+  private readonly RETRY_QUEUE = process.env.RETRY_QUEUE || "notification-retry-queue";
+  private readonly NotificationPersistenceQueue = process.env.PERSISTENCE_QUEUE || "notification-persistence-queue";
+  private readonly RETRY_DELAY_MS = parseInt(process.env.RETRY_DELAY_MS || "900000",10);
+  private readonly NotificationPersistenceQueueTTL = 10000;
+  private readonly amqpUrl: string = process.env.RABBITMQ_URL || "amqp://guest:guest@localhost:5672";
 
   constructor(private readonly logger: WinstonLogger) {}
 
@@ -47,34 +46,43 @@ export class Rabbit implements NotificationGateway {
     try {
       await this.ensureConnection();
 
-      if (!this.channel) {
-        throw new Error("channel is not available");
-      }
+      await this.channel.assertExchange("retry-exchange", "x-delayed-message", {
+        durable: true,
+        arguments: { "x-delayed-type": "direct" },
+      });
 
       await this.channel.assertQueue(this.RETRY_QUEUE, {
         durable: true,
-        arguments: {
-          "x-dead-letter-routing-key": "notification.main",
-          "x-message-ttl": this.RETRY_QUEUE_TTL,
-        },
       });
+
+      await this.channel.bindQueue(
+        this.RETRY_QUEUE,
+        "retry-exchange",
+        this.RETRY_QUEUE
+      );
 
       const message = {
         id: notification.id.toString(),
+        externalId: notification.externalId,
         status: notification.status,
         channel: notification.channel,
         tries: notification.tries,
         recipient: {
           clientId: notification.recipient.clientId,
           phoneNumber: notification.recipient.phoneNumber,
-          name: notification.recipient.name,
+          name: notification.recipient.name ? notification.recipient.name : '',
         },
       };
 
       const published = this.channel.sendToQueue(
         this.RETRY_QUEUE,
         Buffer.from(JSON.stringify(message)),
-        { persistent: true }
+        {
+          headers: {
+            "x-delay": this.RETRY_DELAY_MS,
+          },
+          persistent: true,
+        }
       );
 
       if (!published) {
@@ -86,8 +94,9 @@ export class Rabbit implements NotificationGateway {
         );
       }
 
-      this.logger.info("notification published to retry queue", {
+      this.logger.info("notification scheduled for retry", {
         notificationId: notification.id.toString(),
+        delayMs: this.RETRY_DELAY_MS,
       });
 
       return Result.ok(undefined);
@@ -111,19 +120,16 @@ export class Rabbit implements NotificationGateway {
     try {
       await this.ensureConnection();
 
-      if (!this.channel) {
-        throw new Error("channel is not available");
-      }
-
-      await this.channel.assertQueue(this.CREATE_QUEUE, {
+      await this.channel.assertQueue(this.NotificationPersistenceQueue, {
         durable: true,
         arguments: {
-          "x-message-ttl": this.CREATE_QUEUE_TTL,
+          "x-message-ttl": this.NotificationPersistenceQueueTTL,
         },
       });
 
       const message = {
         id: notification.id.toString(),
+        externalId: notification.externalId,
         status: notification.status,
         channel: notification.channel,
         tries: notification.tries,
@@ -135,7 +141,7 @@ export class Rabbit implements NotificationGateway {
       };
 
       const published = this.channel.sendToQueue(
-        this.CREATE_QUEUE,
+        this.NotificationPersistenceQueue,
         Buffer.from(JSON.stringify(message)),
         { persistent: true }
       );
