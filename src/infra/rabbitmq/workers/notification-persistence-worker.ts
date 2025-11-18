@@ -21,12 +21,11 @@ interface MessageContent {
 export class NotificationPersistenceWorker {
   private connection!: Connection;
   private channel!: Channel;
-  private readonly PREFETCH = 5;
-  private readonly QUEUE_NAME =
-    process.env.PERSISTENCE_QUEUE || "notification-persistence-queue";
-  private readonly amqpUrl: string =
-    process.env.RABBITMQ_URL || "amqp://localhost:5672";
 
+  private readonly PREFETCH = 5;
+  private readonly QUEUE_NAME = process.env.PERSISTENCE_QUEUE || "notification-persistence-queue";
+  private readonly amqpUrl: string = process.env.RABBITMQ_URL || "amqp://localhost:5672";
+  
   constructor(
     private readonly logger: WinstonLogger,
     private readonly notificationRepository: NotificationRepository
@@ -40,14 +39,8 @@ export class NotificationPersistenceWorker {
 
       const ch = await (this.connection as any).createChannel();
       this.channel = ch as Channel;
-      await this.channel.prefetch(this.PREFETCH);
 
-      await this.channel.assertQueue(this.QUEUE_NAME, {
-        durable: true,
-        arguments: {
-          "x-message-ttl": 40000,
-        },
-      });
+      await this.channel.prefetch(this.PREFETCH);
 
       this.logger.info(
         `notification-persistence-worker listening on queue: ${this.QUEUE_NAME}`

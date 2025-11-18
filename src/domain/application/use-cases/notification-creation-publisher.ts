@@ -3,6 +3,7 @@ import { DomainNotification } from "@/domain/enterprise/entities/notification";
 import { Logger } from "@/domain/interfaces/logger";
 import { NotificationGateway } from "@/domain/interfaces/queue";
 import { inject, injectable } from "tsyringe";
+import { Result } from "@/shared/core/result";
 
 @injectable()
 export class NotificationCreationPublisher {
@@ -12,13 +13,16 @@ export class NotificationCreationPublisher {
     private repository: NotificationRepository
   ) {}
 
-  async execute(notification: DomainNotification): Promise<void> {
+  async execute(notification: DomainNotification): Promise<Result<void>> {
     this.logger.info("publishing...", { notification });
     const result = await this.publisher.publishToCreate(notification);
 
     if (!result.isSuccess) {
       this.logger.error("failed to publish creation", { id: notification.id });
       await this.repository.save(notification);
+
+      return Result.fail(result.getError());
     }
+    return Result.ok(undefined);
   }
 }
