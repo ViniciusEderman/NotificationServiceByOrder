@@ -22,7 +22,15 @@ export class NotificationDispatcher {
       return Result.fail(sendResult.getError());
     }
     
-    await this.publisher.execute(notification);
+    const publishResult = await this.publisher.execute(notification);
+
+    if (!publishResult.isSuccess) {
+      this.logger.error("failed to publish notification", { id: notification.id });
+      await this.retry.execute(notification);
+      return Result.fail(publishResult.getError());
+    }
+    
+    this.logger.info("published successfully", { id: notification.id });
     return Result.ok(undefined);
   }
 }

@@ -2,18 +2,21 @@ import { describe, it, expect, vi } from "vitest";
 import { NotificationRetryScheduler } from "@/domain/application/use-cases/notification-retry-scheduler";
 import { makeNotification } from "@/factories/make-notification";
 import { makeNotificationMocks } from "@/mocks/mock-notification-dependencies";
+import { Result } from "@/shared/core/result";
 
 describe("NotificationRetryScheduler", () => {
   it("hould save the notification if you exceed the maximum number of attempts", async () => {
     const { publisher: gateway, repository, logger } = makeNotificationMocks();
     const scheduler = new NotificationRetryScheduler(gateway, repository, logger);
-    const notification = makeNotification({ tries: 5 }); 
+    const notification = makeNotification({ tries: 5 });
+    const markAsFailedSpy = vi.spyOn(notification, "markAsFailed");
 
     vi.spyOn(notification, "exceededMaxTries").mockReturnValue(true);
     await scheduler.execute(notification);
 
     expect(logger.error).toHaveBeenCalledWith("max retries exceeded", { id: notification.id });
     expect(repository.save).toHaveBeenCalledWith(notification);
+    expect(markAsFailedSpy).toHaveBeenCalledWith(notification.status, "max retries exceeded");
   });
 
   it("dhould save if the retry fails to publish", async () => {
@@ -22,13 +25,17 @@ describe("NotificationRetryScheduler", () => {
 
     const notification = makeNotification();
     vi.spyOn(notification, "exceededMaxTries").mockReturnValue(false);
+    const markAsFailedSpy = vi.spyOn(notification, "markAsFailed");
 
-    gateway.publishToRetry = vi.fn().mockResolvedValue({ isSuccess: false });
+    vi.mocked(gateway.publishToRetry).mockResolvedValue(
+      Result.fail<void>({ code: "PUBLISH_RETRY_ERROR", message: "failed" })
+    );
 
     await scheduler.execute(notification);
 
     expect(logger.error).toHaveBeenCalledWith("failed to schedule retry", { id: notification.id });
     expect(repository.save).toHaveBeenCalledWith(notification);
+    expect(markAsFailedSpy).toHaveBeenCalledWith(notification.status, "failed to schedule retry");
   });
 
   it("it should not save if the retry is published successfully", async () => {
@@ -37,7 +44,7 @@ describe("NotificationRetryScheduler", () => {
 
     const notification = makeNotification();
     vi.spyOn(notification, "exceededMaxTries").mockReturnValue(false);
-    gateway.publishToRetry = vi.fn().mockResolvedValue({ isSuccess: true });
+    vi.mocked(gateway.publishToRetry).mockResolvedValue(Result.ok<void>(undefined));
 
     await scheduler.execute(notification);
 

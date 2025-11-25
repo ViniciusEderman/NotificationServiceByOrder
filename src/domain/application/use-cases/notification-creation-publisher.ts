@@ -2,7 +2,7 @@ import { NotificationRepository } from "@/domain/interfaces/notification-reposit
 import { DomainNotification } from "@/domain/enterprise/entities/notification";
 import { Logger } from "@/domain/interfaces/logger";
 import { NotificationGateway } from "@/domain/interfaces/queue";
-import { inject, injectable } from "tsyringe";
+import { injectable } from "tsyringe";
 import { Result } from "@/shared/core/result";
 
 @injectable()
@@ -19,10 +19,12 @@ export class NotificationCreationPublisher {
 
     if (!result.isSuccess) {
       this.logger.error("failed to publish creation", { id: notification.id });
+      notification.markAsFailed(notification.status, result.getError().message);
       await this.repository.save(notification);
 
       return Result.fail(result.getError());
     }
+    
     return Result.ok(undefined);
   }
 }
