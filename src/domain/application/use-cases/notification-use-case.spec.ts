@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { describe, it, expect, vi } from "vitest";
 import { SendNotificationUseCase } from "@/domain/application/use-cases/notification-use-case";
-import { DomainNotification } from "@/domain/enterprise/entities/notification";
+import { DomainNotification, Status } from "@/domain/enterprise/entities/notification";
 import { makeRecipient } from "@/factories/make-recipient";
 import { makeNotificationEvent } from "@/factories/make-notification-event";
 import { makeLogger } from "@/mocks/make-logger";
@@ -102,10 +102,40 @@ describe("SendNotificationUseCase", () => {
       recipientRepository
     );
 
-    const event = makeNotificationEvent({ clientId: recipient.clientId });
+    const event = makeNotificationEvent({ clientId: recipient.clientId, tries: 5 });
     const result = await useCase.execute(event);
 
     expect(result.isSuccess).toBe(true);
     expect(result.getValue()).toBe(fakeNotification);
+  });
+
+  it("should default optional event fields when not provided", async () => {
+    const logger = makeLogger();
+    const recipient = makeRecipient() as Recipient;
+    const fakeNotification = { id: "uuid-defaults" } as any;
+
+    const createSpy = vi
+      .spyOn(DomainNotification, "create")
+      .mockReturnValue(Result.ok(fakeNotification));
+
+    const recipientRepository = {
+      findByClientId: vi.fn().mockResolvedValue(Result.ok(recipient)),
+    };
+
+    const useCase = new SendNotificationUseCase(logger, recipientRepository);
+
+    const result = await useCase.execute({
+      clientId: recipient.clientId,
+      externalId: "4b9d8f9c-9d0f-47a7-baee-8fe61d76e2dc",
+      status: Status.Pending,
+    });
+
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ tries: 0, channel: "SMS" })
+    );
+    expect(result.isSuccess).toBe(true);
+    expect(result.getValue()).toBe(fakeNotification);
+
+    createSpy.mockRestore();
   });
 });

@@ -10,30 +10,36 @@ describe("NotificationCreationPublisher", () => {
     const { publisher, repository, logger } = makeNotificationMocks();
     const useCase = new NotificationCreationPublisher(logger, publisher, repository);
     const notification = makeNotification();
+    const markAsFailedSpy = vi.spyOn(notification, "markAsFailed");
 
     vi.mocked(publisher.publishToCreate).mockResolvedValue(Result.ok<void>(undefined));
 
-    await useCase.execute(notification);
+    const result = await useCase.execute(notification);
 
     expect(logger.info).toHaveBeenCalledWith("publishing...", { notification });
     expect(publisher.publishToCreate).toHaveBeenCalledWith(notification);
     expect(logger.error).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
+    expect(result.isSuccess).toBe(true);
+    expect(markAsFailedSpy).not.toHaveBeenCalled();
   });
 
   it("should save the notification if the publication fails", async () => {
     const { publisher, repository, logger } = makeNotificationMocks();
     const useCase = new NotificationCreationPublisher(logger, publisher, repository);
     const notification = makeNotification();
+    const markAsFailedSpy = vi.spyOn(notification, "markAsFailed");
 
     vi.mocked(publisher.publishToCreate).mockResolvedValue(
       Result.fail<void>({ code: "PUBLISH_ERROR", message: "failed to publish" })
     );
 
-    await useCase.execute(notification);
+    const result = await useCase.execute(notification);
 
     expect(logger.info).toHaveBeenCalledWith("publishing...", { notification });
     expect(logger.error).toHaveBeenCalledWith("failed to publish creation", { id: notification.id });
     expect(repository.save).toHaveBeenCalledWith(notification);
+    expect(result.isSuccess).toBe(false);
+    expect(markAsFailedSpy).toHaveBeenCalledWith(notification.status, "failed to publish");
   });
 });
