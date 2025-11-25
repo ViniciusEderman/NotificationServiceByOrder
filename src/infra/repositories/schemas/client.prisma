@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  pending
+  accepted
+  finished
+  canceled
+  failed
+}
+
+enum Channel {
+  SMS
+}
+
+model Recipient {
+  clientId      String         @id @db.Uuid
+  phoneNumber   String         @db.VarChar(20)
+  name          String?        @db.VarChar(255)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  notifications Notification[]
+
+  @@map("recipients")
+}
+
+model Notification {
+  id                  String    @id @default(uuid()) @db.Uuid
+  externalId          String    @unique
+  status              Status
+  channel             Channel
+  createdAt           DateTime  @default(now())
+  tries               Int       @default(0)
+  recipientClientId   String    @db.Uuid
+  failed              Boolean?  @default(false)
+  failureMessage      String?
+  failedAt            DateTime?
+  recipient           Recipient @relation(fields: [recipientClientId], references: [clientId], onDelete: Cascade)
+
+  @@index([recipientClientId])
+  @@map("notifications")
+}

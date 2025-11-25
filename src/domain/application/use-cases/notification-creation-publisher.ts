@@ -2,7 +2,7 @@ import { NotificationRepository } from "@/domain/interfaces/notification-reposit
 import { DomainNotification } from "@/domain/enterprise/entities/notification";
 import { Logger } from "@/domain/interfaces/logger";
 import { NotificationGateway } from "@/domain/interfaces/queue";
-import { inject, injectable } from "tsyringe";
+import { injectable } from "tsyringe";
 import { Result } from "@/shared/core/result";
 
 @injectable()
