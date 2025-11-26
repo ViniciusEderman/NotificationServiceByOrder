@@ -2,15 +2,15 @@ import { NotificationRepository } from "@/domain/interfaces/notification-reposit
 import { DomainNotification } from "@/domain/enterprise/entities/notification";
 import { Logger } from "@/domain/interfaces/logger";
 import { NotificationGateway } from "@/domain/interfaces/queue";
-import { injectable } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 import { Result } from "@/shared/core/result";
 
 @injectable()
 export class NotificationCreationPublisher {
   constructor(
-    private logger: Logger,
-    private publisher: NotificationGateway,
-    private repository: NotificationRepository
+    @inject("Logger") private readonly logger: Logger,
+    @inject("NotificationGateway") private readonly publisher: NotificationGateway,
+    @inject("NotificationRepository") private readonly repository: NotificationRepository
   ) {}
 
   async execute(notification: DomainNotification): Promise<Result<void>> {

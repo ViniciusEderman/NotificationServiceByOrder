@@ -13,7 +13,7 @@ export class PrismaRecipientRepository implements RecipientRepository {
     try {
       this.logger.info("fetching recipient by clientId", { clientId });
 
-      const recipientRecord: Recipient = await prisma.recipient.findUnique({
+      const recipientRecord = await prisma.recipient.findUnique({
         where: { clientId },
       });
 
@@ -22,9 +22,18 @@ export class PrismaRecipientRepository implements RecipientRepository {
         return Result.ok(null);
       }
 
-      return Result.ok(recipientRecord);
-    } 
-    catch (error) {
+      const recipientResult = Recipient.create({
+        clientId: recipientRecord.clientId,
+        phoneNumber: recipientRecord.phoneNumber,
+        name: recipientRecord.name || undefined,
+      });
+
+      if (!recipientResult.isSuccess) {
+        return Result.fail(recipientResult.getError());
+      }
+
+      return Result.ok(recipientResult.getValue() as Recipient);
+    } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
       this.logger.error("prisma recipient lookup failed", {

@@ -20,7 +20,12 @@ export class PrismaNotificationRepository implements NotificationRepository {
 
     try {
       await prisma.notification.create({
-        data: notificationData,
+        data: {
+          ...notificationData,
+          recipient: {
+            connect: { clientId: notificationData.recipientId },
+          },
+        },
       });
 
       this.logger.info("notification saved successfully", {

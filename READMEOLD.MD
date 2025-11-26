@@ -18,3 +18,4 @@ RabbitMQ Event → UseCase → Notification (em memória) → Envio →
 
 criar um mock do getByClientId 
 criar teste unitario a nivel de infra, para o mock do prisma(orm)
+injenação de dependencia

@@ -3,12 +3,14 @@ import { Logger } from "@/domain/interfaces/logger";
 import { NotificationRepository } from "@/domain/interfaces/notification-repository";
 import { NotificationGateway } from "@/domain/interfaces/queue";
 import { Result } from "@/shared/core/result";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class NotificationRetryScheduler {
   constructor(
-    private gateway: NotificationGateway,
-    private repository: NotificationRepository,
-    private logger: Logger
+    @inject("NotificationGateway") private gateway: NotificationGateway,
+    @inject("NotificationRepository") private repository: NotificationRepository,
+    @inject("Logger") private logger: Logger
   ) {}
 
   async execute(notification: DomainNotification): Promise<Result<void>> {
