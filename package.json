@@ -5,7 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "start:dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "start": "tsx watch src/index.ts",
+    "start:prod": "NODE_ENV=production node dist/main.js",
+    "build": "tsc",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
   },
   "keywords": [],
   "author": "",
@@ -13,8 +20,11 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/amqplib": "0.10.8",
+    "@types/node": "24.10.1",
     "@vitest/coverage-istanbul": "3.2.4",
     "@vitest/coverage-v8": "3.2.4",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.2.4"
   },
@@ -23,7 +33,8 @@
     "amqplib": "0.10.9",
     "prisma": "6.19.0",
     "reflect-metadata": "0.1.13",
-    "tsyringe": "3.3.0",
+    "tsyringe": "4.10.0",
+    "twilio": "5.10.6",
     "winston": "3.18.3"
   }
 }

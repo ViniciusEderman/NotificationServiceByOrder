@@ -4,13 +4,15 @@ import { NotificationCreationPublisher } from "@/domain/application/use-cases/no
 import { NotificationRetryScheduler } from "@/domain/application/use-cases/notification-retry-scheduler";
 import { DomainNotification } from "@/domain/enterprise/entities/notification";
 import { Result } from "@/shared/core/result";
+import { inject, injectable } from "tsyringe";
 
+@injectable()
 export class NotificationDispatcher {
   constructor(
-    private readonly sender: NotificationSender,
-    private readonly retry: NotificationRetryScheduler,
-    private readonly publisher: NotificationCreationPublisher,
-    private readonly logger: Logger
+    @inject("NotificationSender") private readonly sender: NotificationSender,
+    @inject("NotificationRetryScheduler") private readonly retry: NotificationRetryScheduler,
+    @inject("NotificationCreationPublisher") private readonly publisher: NotificationCreationPublisher,
+    @inject("Logger") private readonly logger: Logger
   ) {}
 
   async execute(notification: DomainNotification): Promise<Result<void>> {

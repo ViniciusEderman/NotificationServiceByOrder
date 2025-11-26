@@ -5,13 +5,13 @@ import { Logger } from "@/domain/interfaces/logger";
 import { NotificationEvent } from "@/domain/application/dtos/notification-event.dto";
 import { RecipientRepository } from "@/domain/interfaces/recipient-repository";
 import { AppError, Result } from "@/shared/core/result";
-import { injectable } from "tsyringe";
+import { inject, injectable } from "tsyringe";
 
 @injectable()
 export class SendNotificationUseCase {
   constructor(
-    private logger: Logger,
-    private recipientRepository: RecipientRepository,
+    @inject("Logger") private logger: Logger,
+    @inject("RecipientRepository") private recipientRepository: RecipientRepository,
   ) {}
 
   async execute(event: NotificationEvent): Promise<Result<DomainNotification>> {
